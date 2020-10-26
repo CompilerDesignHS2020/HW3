@@ -294,8 +294,14 @@ map_args args 0
      to hold all of the local stack slots.
 *)
 let compile_fdecl (tdecls:(tid * ty) list) (name:string) ({ f_ty; f_param; f_cfg }:fdecl) : prog =
-failwith "compile_fdecl unimplemented"
-
+let layout = stack_layout f_param f_cfg in
+let rec map_params (param_list : Ll.uid list) size =
+  begin match param_list with
+    | [] -> []
+    | h::tl -> (map_params tl (size - 1)) @ [(Movq, [(arg_loc size);(lookup layout h)])]
+  end
+in 
+[{lbl = name ; global = true ; asm = Text(map_params f_param (List.length f_param))}]
 
 
 (* compile_gdecl ------------------------------------------------------------ *)
