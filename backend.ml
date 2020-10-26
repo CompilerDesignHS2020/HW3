@@ -260,7 +260,6 @@ match n with
   | _ -> Ind3(Lit(Int64.of_int (-(n-6)*8)), Rbp)
   
 
-
 (* We suggest that you create a helper function that computes the
    stack layout for a given function declaration.
 
@@ -268,10 +267,15 @@ match n with
    - in this (inefficient) compilation strategy, each local id
      is also stored as a stack slot.
    - see the discussion about locals
-
 *)
+
 let stack_layout (args : uid list) ((block, lbled_blocks):cfg) : layout =
-failwith "stack_layout not implemented"
+let rec map_args (args_to_map : uid list) (n:int) = 
+  match args_to_map with
+    | [] -> []
+    | h::tl -> [(h, Ind3(Lit(Int64.of_int (n*8)), Rbp))] @ (map_args tl (n+1))
+in
+map_args args 0
 
 (* The code for the entry-point of a function must do several things:
 
