@@ -300,8 +300,10 @@ let rec map_params (param_list : Ll.uid list) size =
     | [] -> []
     | h::tl -> (map_params tl (size - 1)) @ [(Movq, [(arg_loc size);(lookup layout h)])]
   end
-in 
-[{lbl = name ; global = true ; asm = Text(map_params f_param (List.length f_param))}]
+in
+let adjust_stackpointer = [(Addq, [Imm(Lit(Int64.of_int (List.length layout)));Reg(Rsp)])] in
+let move_args_to_stack = map_params f_param (List.length f_param) in
+[{lbl = name ; global = true ; asm = Text(adjust_stackpointer@move_args_to_stack)}]
 
 
 (* compile_gdecl ------------------------------------------------------------ *)

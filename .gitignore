@@ -1,4 +1,5 @@
 
 _build
-
+output
+a.out
 main.native
