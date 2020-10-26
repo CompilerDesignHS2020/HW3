@@ -222,11 +222,12 @@ let mk_lbl (fn:string) (l:string) = fn ^ "." ^ l
 *)
 let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
   begin match t with
-    (* ret value in rax, reset rsp *)
+    (* reset rsp, reset rbp value (resp. pop rbp), ret value in rax, last: ret*)
     | Ret(ret_type, opt) -> 
       [(Addq, [Imm(Lit(Int64.mul (Int64.of_int (List.length ctxt.layout)) 8L));Reg(Rsp)]);
-      (Addq, [Imm(Lit(Int64.of_int (List.length ctxt.layout)));Reg(Rsp)]);
-      (Addq, [Imm(Lit(Int64.of_int (List.length ctxt.layout)));Reg(Rsp)])]
+      (Popq, [Reg(Rbp)]);
+      (Retq, []);
+      ]
     | _ -> []
 
   end
@@ -265,7 +266,10 @@ match n with
   | 3 -> Reg(Rcx)
   | 4 -> Reg(R08)
   | 5 -> Reg(R09)
-  | _ -> Ind3(Lit(Int64.of_int (-(n-6)*8)), Rbp)
+  (*the sixth element is the first which is directly on the stack
+  start filling in stack from adress of old_rbp - 2*int64
+  *)
+  | _ -> Ind3(Lit(Int64.of_int ((-(n-6)-2)*8)), Rbp)
   
 
 (* We suggest that you create a helper function that computes the
@@ -281,9 +285,9 @@ let stack_layout (args : uid list) ((block, lbled_blocks):cfg) : layout =
 let rec map_args (args_to_map : uid list) (n:int) = 
   match args_to_map with
     | [] -> []
-    | h::tl -> [(h, Ind3(Lit(Int64.of_int (n*8)), Rbp))] @ (map_args tl (n+1))
+    | h::tl -> [(h, Ind3(Lit(Int64.of_int (n * -8)), Rbp))] @ (map_args tl (n+1))
 in
-map_args args 0
+map_args args 1
 
 (* The code for the entry-point of a function must do several things:
 
@@ -303,15 +307,39 @@ map_args args 0
 *)
 let compile_fdecl (tdecls:(tid * ty) list) (name:string) ({ f_ty; f_param; f_cfg }:fdecl) : prog =
 let layout = stack_layout f_param f_cfg in
-let rec map_params (param_list : Ll.uid list) size =
+let rec map_params (param_list : Ll.uid list)ind =
   begin match param_list with
     | [] -> []
-    | h::tl -> (map_params tl (size - 1)) @ [(Movq, [(arg_loc size);(lookup layout h)])]
+    | h::tl -> (map_params tl (ind + 1)) @ [(Movq, [(arg_loc ind);(lookup layout h)])]
   end
 in
-let adjust_stackpointer = [(Subq, [Imm(Lit(Int64.mul (Int64.of_int (List.length layout)) 8L));Reg(Rsp)])] in
-let move_args_to_stack = map_params f_param (List.length f_param) in
-[{lbl = name ; global = true ; asm = Text(adjust_stackpointer@move_args_to_stack)}]
+
+(* set rb to top uid (rsp += length of uid_layout * 8) *)
+let save_old_rbp = [Pushq, [(Reg(Rbp))]] in
+
+(* set rbp to value of rsp *)
+let set_rbp = [Movq, [Reg(Rbp); Reg(Rsp)]] in
+
+(* set rsp to top uid (rsp += length of uid_layout * 8) *)
+let adjust_stackpointer = [(Subq, [Imm(Lit(Int64.mul (Int64.of_int (List.length layout)) 8L)); Reg(Rsp)])] in
+
+(* set rsp to top uid (rsp += length of uid_layout * 8) *)
+let move_args_to_stack = map_params f_param 0 in
+
+(* extract last instruction from control flow graph *)
+let (_, cfg_list) = f_cfg in
+let (lbl, block) = last_elem_of(cfg_list) in
+let last_ins = last_elem_of(block.insns) in
+
+let ctxt = {tdecls = tdecls; layout = layout} in
+(*compute terminate_ins *)
+let terminate_ins = compile_terminator name ctxt last_ins in
+[{lbl = name ; global = true ; asm = Text(
+  save_old_rbp@
+  set_rbp@
+  adjust_stackpointer@
+  move_args_to_stack@
+  terminate_ins)}]
 
 
 (* compile_gdecl ------------------------------------------------------------ *)
