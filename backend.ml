@@ -13,6 +13,9 @@ open X86
 
 (* helpers ------------------------------------------------------------------ *)
 
+let last_elem_of (l: 'a list)=
+  List.nth l ((List.length l)-1)
+
 (* Map LL comparison operations to X86 condition codes *)
 let compile_cnd = function
   | Ll.Eq  -> X86.Eq
