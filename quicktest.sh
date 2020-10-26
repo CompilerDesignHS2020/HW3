@@ -8,8 +8,17 @@ make
 rm -R output
 mkdir output
 
-# start test
-./main.native llprograms/add.ll
+s=${1##*/}
+echo "gitter" $1
+echo "gatter"
 
-code output/add.s
+# compile source
+./main.native $1
+
+# open compiled program
+FILE_PATH="output/"
+s=${s##*/}
+FILE="${s%.ll}"
+EXTENSION=".s"
+code $FILE_PATH$FILE$EXTENSION
 
