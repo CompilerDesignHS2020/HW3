@@ -14,6 +14,7 @@ open X86
 (* helpers ------------------------------------------------------------------ *)
 
 let last_elem_of (l: 'a list)=
+  print_endline @@ Int.to_string ((List.length l)-1);
   List.nth l ((List.length l)-1)
 
 (* Map LL comparison operations to X86 condition codes *)
@@ -330,13 +331,8 @@ let adjust_stackpointer = [(Subq, [Imm(Lit(Int64.mul (Int64.of_int (List.length 
 let move_args_to_stack = map_params f_param 0 in
 
 (* extract last instruction from control flow graph *)
-let (_, cfg_list) = f_cfg in
-let (lbl, block) = last_elem_of(cfg_list) in
-let (last_uid, last_ins) = last_elem_of(block.insns) in
-  begin match last_ins with
-    | Terminator -> 
-    | _ -> gugus
-  end 
+let (first_block, other_blocks) = f_cfg in
+let (_,terminator) = first_block.term in
 
 let ctxt = {tdecls = tdecls; layout = layout} in
 (*compute terminate_ins *)
