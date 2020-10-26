@@ -332,11 +332,15 @@ let move_args_to_stack = map_params f_param 0 in
 (* extract last instruction from control flow graph *)
 let (_, cfg_list) = f_cfg in
 let (lbl, block) = last_elem_of(cfg_list) in
-let last_ins = last_elem_of(block.insns) in
+let (last_uid, last_ins) = last_elem_of(block.insns) in
+  begin match last_ins with
+    | Terminator -> 
+    | _ -> gugus
+  end 
 
 let ctxt = {tdecls = tdecls; layout = layout} in
 (*compute terminate_ins *)
-let terminate_ins = compile_terminator name ctxt last_ins in
+let terminate_ins = compile_terminator name ctxt terminator in
 [{lbl = name ; global = true ; asm = Text(
   save_old_rbp@
   set_rbp@
