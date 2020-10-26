@@ -5,10 +5,11 @@ make clean
 make
 
 # empty output folder
-cd output
-pwd
-cd ..
+rm -R output
+mkdir output
 
 # start test
 ./main.native llprograms/add.ll
+
+code output/add.s
 
