@@ -221,7 +221,15 @@ let mk_lbl (fn:string) (l:string) = fn ^ "." ^ l
    [fn] - the name of the function containing this terminator
 *)
 let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
-  failwith "compile_terminator not implemented"
+  begin match t with
+    (* ret value in rax, reset rsp *)
+    | Ret(ret_type, opt) -> 
+      [(Addq, [Imm(Lit(Int64.mul (Int64.of_int (List.length ctxt.layout)) 8L));Reg(Rsp)]);
+      (Addq, [Imm(Lit(Int64.of_int (List.length ctxt.layout)));Reg(Rsp)]);
+      (Addq, [Imm(Lit(Int64.of_int (List.length ctxt.layout)));Reg(Rsp)])]
+    | _ -> []
+
+  end
 
 
 (* compiling blocks --------------------------------------------------------- *)
@@ -301,7 +309,7 @@ let rec map_params (param_list : Ll.uid list) size =
     | h::tl -> (map_params tl (size - 1)) @ [(Movq, [(arg_loc size);(lookup layout h)])]
   end
 in
-let adjust_stackpointer = [(Subq, [Imm(Lit(Int64.of_int (List.length layout)));Reg(Rsp)])] in
+let adjust_stackpointer = [(Subq, [Imm(Lit(Int64.mul (Int64.of_int (List.length layout)) 8L));Reg(Rsp)])] in
 let move_args_to_stack = map_params f_param (List.length f_param) in
 [{lbl = name ; global = true ; asm = Text(adjust_stackpointer@move_args_to_stack)}]
 
