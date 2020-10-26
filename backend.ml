@@ -257,7 +257,7 @@ match n with
   | 3 -> Reg(Rcx)
   | 4 -> Reg(R08)
   | 5 -> Reg(R09)
-  | _ -> Ind3(Imm(-(n-6)*8, Reg(Rbp))
+  | _ -> Ind3(Lit(Int64.of_int (-(n-6)*8)), Rbp)
   
 
 
