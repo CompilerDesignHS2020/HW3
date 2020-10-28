@@ -256,15 +256,27 @@ let mk_lbl (fn:string) (l:string) = fn ^ "." ^ l
 *)
 let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
   begin match t with
-    (* reset rsp, reset rbp value (resp. pop rbp), ret value in rax, last: ret*)
+    (* ret value in rax, reset rsp, reset rbp value (resp. pop rbp), last but not least: ret*)
     | Ret(ret_type, opt) -> 
+      let rax_ins =  
+        begin match opt with
+          | None -> []
+          | Some operand -> [compile_operand ctxt (Reg(Rax)) operand]
+        end
+      in
+      rax_ins@
       [(Addq, [Imm(Lit(Int64.mul (Int64.of_int (List.length ctxt.layout)) 8L));Reg(Rsp)]);
       (Popq, [Reg(Rbp)]);
       (Retq, []);
       ]
-    | _ -> []
-
+    | Br(lbl) -> [(Jmp, [Imm(Lbl(lbl))])]
+    | Cbr(operand, lbl1, lbl2) -> 
+      [compile_operand ctxt (Reg(Rax)) operand;
+      (Cmpq, [Reg(Rax); (Imm(Lit(0L)))]);
+      (J(Neq), [Imm(Lbl(lbl1))]);
+      (Jmp, [Imm(Lbl(lbl2))])]
   end
+
 
 
 (* compiling blocks --------------------------------------------------------- *)
