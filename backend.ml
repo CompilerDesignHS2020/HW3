@@ -312,7 +312,7 @@ let stack_layout (args : uid list) ((start_block, lbled_blocks):cfg) : layout =
 let rec map_uids (args_to_map : uid list) (cur_ind:int) = 
   match args_to_map with
     | [] -> []
-    | h::tl -> [(h, Ind3(Lit(Int64.of_int (cur_ind * -8)), Rbp))] @ (map_args tl (cur_ind+1))
+    | h::tl -> [(h, Ind3(Lit(Int64.of_int (cur_ind * -8)), Rbp))] @ (map_uids tl (cur_ind+1))
 in
 let arg_layout = map_uids args 1 in
 
