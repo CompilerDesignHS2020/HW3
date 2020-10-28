@@ -331,6 +331,9 @@ let rec extract_uid_from_blocks (rem_blocks: (Ll.lbl * Ll.block) list): uid list
 in
 let uid_list_of_cfg = (extract_insns_uids start_block.insns)@extract_uid_from_blocks lbled_blocks in
 
+(* concat layout from blocks behind layout from args, starting at index "arg_layout size" *)
+arg_layout@(map_uids uid_list_of_cfg ((List.length arg_layout) + 1))
+
 
 (* The code for the entry-point of a function must do several things:
 
