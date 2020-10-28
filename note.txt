@@ -1,0 +1,25 @@
+fun1() {
+ int num1;
+ int num2;
+ int num3 = num1 + num2;
+ int num4 = fun2 (num1, num2)
+ return (num3 + num4); 
+}
+
+
+
+
+
+structure of insn-compilation
+
+dest = llvm_add op1 op2
+->
+mov rdx op1
+mov rax op2
+add rdx rax
+mov layout(dest) rdx
+
+
+for sub:
+x64 subq: rdx - rax -> rdx
+llvm sub: uid = op1 - op2
