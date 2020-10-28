@@ -289,7 +289,7 @@ match n with
    - see the discussion about locals
 *)
 
-let stack_layout (args : uid list) ((block, lbled_blocks):cfg) : layout =
+let stack_layout (args : uid list) ((start_block, lbled_blocks):cfg) : layout =
 let rec map_args (args_to_map : uid list) (cur_ind:int) = 
   match args_to_map with
     | [] -> []
@@ -303,9 +303,12 @@ let rec extract_insns_uids (insns : (uid * insn) list): uid list =
     | (cur_uid, cur_ins)::tl -> [cur_uid]@(extract_insns_uids tl)
 in
 
-let rec extract_block_uids (block: Ll.block): uid list =
-
+let rec extract_uid_from_blocks (rem_blocks: (Ll.lbl * Ll.block) list): uid list =
+    match rem_blocks with
+      | [] -> []
+      | (_,block)::tl -> (extract_insns_uids block.insns)@(extract_blocks tl)
 in
+let uid_list_of_cfg = (extract_insns_uids start_block.insns)@extract_uid_from_blocks lbled_blocks in
 
 
 (* The code for the entry-point of a function must do several things:
