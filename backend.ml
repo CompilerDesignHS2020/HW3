@@ -314,7 +314,7 @@ let rec map_uids (args_to_map : uid list) (cur_ind:int) =
     | [] -> []
     | h::tl -> [(h, Ind3(Lit(Int64.of_int (cur_ind * -8)), Rbp))] @ (map_args tl (cur_ind+1))
 in
-let arg_layout = map_args args 1 in
+let arg_layout = map_uids args 1 in
 
 (* extracts all uids from an insns list *)
 let rec extract_insns_uids (insns : (uid * insn) list): uid list =
@@ -330,6 +330,9 @@ let rec extract_uid_from_blocks (rem_blocks: (Ll.lbl * Ll.block) list): uid list
       | (_,block)::tl -> (extract_insns_uids block.insns)@(extract_blocks tl)
 in
 let uid_list_of_cfg = (extract_insns_uids start_block.insns)@extract_uid_from_blocks lbled_blocks in
+
+(* concat layout from blocks behind layout from args, starting at index "arg_layout size" *)
+arg_layout@(map_uids uid_list_of_cfg ((List.length arg_layout) + 1))
 
 
 (* The code for the entry-point of a function must do several things:
