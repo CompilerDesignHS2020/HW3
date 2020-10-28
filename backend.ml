@@ -290,12 +290,23 @@ match n with
 *)
 
 let stack_layout (args : uid list) ((block, lbled_blocks):cfg) : layout =
-let rec map_args (args_to_map : uid list) (n:int) = 
+let rec map_args (args_to_map : uid list) (cur_ind:int) = 
   match args_to_map with
     | [] -> []
-    | h::tl -> [(h, Ind3(Lit(Int64.of_int (n * -8)), Rbp))] @ (map_args tl (n+1))
+    | h::tl -> [(h, Ind3(Lit(Int64.of_int (cur_ind * -8)), Rbp))] @ (map_args tl (cur_ind+1))
 in
-map_args args 1
+let arg_layout = map_args args 1 in
+
+let rec extract_insns_uids (insns : (uid * insn) list): uid list =
+  match insns with
+    | [] -> []
+    | (cur_uid, cur_ins)::tl -> [cur_uid]@(extract_insns_uids tl)
+in
+
+let rec extract_block_uids (block: Ll.block): uid list =
+
+in
+
 
 (* The code for the entry-point of a function must do several things:
 
