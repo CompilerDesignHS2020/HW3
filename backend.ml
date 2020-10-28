@@ -101,6 +101,11 @@ let compile_operand (ctxt:ctxt) (dest:X86.operand) : Ll.operand -> ins =
     | Gid(g) -> (Leaq, [Imm(Lbl(g)); dest])
     | Id(l) -> (Movq, [lookup ctxt.layout l;dest])
 
+()
+let compile_result (ctxt:ctxt) (src:X86.operand) : uid -> ins =
+  function uid -> 
+  (Movq, [src; lookup ctxt.layout uid])
+
 
 (* compiling call  ---------------------------------------------------------- *)
 
@@ -205,8 +210,19 @@ failwith "compile_gep not implemented"
 
    - Bitcast: does nothing interesting at the assembly level
 *)
+
+(* op1 is always loaded to rax, op2 to rdx *)
 let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
-      failwith "compile_insn not implemented"
+  match i with
+  | Binop(operator, ty, op1, op2) -> 
+  let x86_ins_src = compile_operand ctxt (Reg(Rax)) op1 in
+  let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op2 in
+  let x86_ins_store = 
+  begin match operator with
+    | Add -> 
+    | _ -> []
+  end
+  | _ -> []
 
 
 
