@@ -94,8 +94,12 @@ let lookup m x = List.assoc x m
    destination (usually a register).
 *)
 let compile_operand (ctxt:ctxt) (dest:X86.operand) : Ll.operand -> ins =
-  function _ -> failwith "compile_operand unimplemented"
-
+  function ll_op -> 
+  match ll_op with
+    | Null -> (Movq, [Imm(Lit(0L)); dest])
+    | Const(c) -> (Movq, [Imm(Lit(c)); dest])
+    | Gid(g) -> (Leaq, [Imm(Lbl(g)); dest])
+    | Id(l) -> (Movq, [lookup ctxt.layout l;dest])
 
 
 (* compiling call  ---------------------------------------------------------- *)
