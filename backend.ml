@@ -211,23 +211,27 @@ failwith "compile_gep not implemented"
    - Bitcast: does nothing interesting at the assembly level
 *)
 
-(* op1 is always loaded to rax, op2 to rdx *)
+(* op1 is always loaded to rdx, op2 to rax *)
 let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
   match i with
   | Binop(operator, ty, op1, op2) -> 
-  let x86_ins_src = compile_operand ctxt (Reg(Rax)) op1 in
-  let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op2 in
+  let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op1 in
+  let x86_ins_src = compile_operand ctxt (Reg(Rax)) op2 in
   let x86_ins_calc =
   begin match operator with
     | Add -> (Addq, [(Reg(Rax)); (Reg(Rdx))])
     | Sub -> (Subq, [(Reg(Rax)); (Reg(Rdx))])
     | Mul -> (Imulq, [(Reg(Rax)); (Reg(Rdx))])
     | Shl -> (Shlq, [(Reg(Rax)); (Reg(Rdx))])
-    | _ -> (Retq,[])
+    | Lshr -> (Shrq, [(Reg(Rax)); (Reg(Rdx))])
+    | Ashr -> (Sarq, [(Reg(Rax)); (Reg(Rdx))])
+    | And -> (Andq, [(Reg(Rax)); (Reg(Rdx))])
+    | Or -> (Orq, [(Reg(Rax)); (Reg(Rdx))])
+    | Xor -> (Xorq, [(Reg(Rax)); (Reg(Rdx))])
   end
   in
   let x86_ins_store = compile_result ctxt (Reg(Rdx)) uid in
-  [x86_ins_src;x86_ins_dest;x86_ins_calc;x86_ins_store]
+  [x86_ins_dest;x86_ins_src;x86_ins_calc;x86_ins_store]
   | _ -> []
 
 
