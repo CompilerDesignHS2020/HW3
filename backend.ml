@@ -289,14 +289,33 @@ match n with
    - see the discussion about locals
 *)
 
+(* creates mapping of all uids of a function: *)
+(* 
+ret_addr
+old_rbp     <- rbp
+arg_1
+arg_2
+arg_3
+...
+arg_n
+uid_of_ins_1
+uid_of_ins_2
+uid_of_ins_3
+...
+uid_of_ins_n
+
+*)
 let stack_layout (args : uid list) ((block, lbled_blocks):cfg) : layout =
-let rec map_args (args_to_map : uid list) (cur_ind:int) = 
+
+(* maps uids to stack slots; starts cur_ind above Rbp *)
+let rec map_uids (args_to_map : uid list) (cur_ind:int) = 
   match args_to_map with
     | [] -> []
     | h::tl -> [(h, Ind3(Lit(Int64.of_int (cur_ind * -8)), Rbp))] @ (map_args tl (cur_ind+1))
 in
 let arg_layout = map_args args 1 in
 
+(* extracts all uids from an insns list *)
 let rec extract_insns_uids (insns : (uid * insn) list): uid list =
   match insns with
     | [] -> []
