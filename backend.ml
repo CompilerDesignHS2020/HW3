@@ -322,7 +322,7 @@ in
 let save_old_rbp = [Pushq, [(Reg(Rbp))]] in
 
 (* set rbp to value of rsp *)
-let set_rbp = [Movq, [Reg(Rbp); Reg(Rsp)]] in
+let set_rbp = [Movq, [Reg(Rsp); Reg(Rbp)]] in
 
 (* set rsp to top uid (rsp += length of uid_layout * 8) *)
 let adjust_stackpointer = [(Subq, [Imm(Lit(Int64.mul (Int64.of_int (List.length layout)) 8L)); Reg(Rsp)])] in
