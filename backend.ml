@@ -409,17 +409,30 @@ let move_args_to_stack = map_params f_param 0 in
 
 (* extract last instruction from control flow graph *)
 let (first_block, other_blocks) = f_cfg in
-let (_,terminator) = first_block.term in
 
 let ctxt = {tdecls = tdecls; layout = layout} in
 (*compute terminate_ins *)
-let terminate_ins = compile_terminator name ctxt terminator in
+let compiled_first_block = compile_block name ctxt first_block in
+
+let first_element =
 [{lbl = name ; global = true ; asm = Text(
   save_old_rbp@
   set_rbp@
   adjust_stackpointer@
   move_args_to_stack@
-  terminate_ins)}]
+  compiled_first_block)}]
+in
+
+let rec compile_lbl_blocks (rem_blocks: (Ll.lbl * Ll.block) list): X86.elem list =
+    match rem_blocks with
+      | [] -> []
+      | (lbl, curr_block)::tl -> [compile_lbl_block name lbl ctxt curr_block]@(compile_lbl_blocks tl)
+in
+
+let other_elements = compile_lbl_blocks other_blocks in
+
+first_element@other_elements
+
 
 
 (* compile_gdecl ------------------------------------------------------------ *)
