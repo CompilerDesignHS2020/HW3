@@ -101,7 +101,7 @@ let compile_operand (ctxt:ctxt) (dest:X86.operand) : Ll.operand -> ins =
     | Gid(g) -> (Leaq, [Imm(Lbl(g)); dest])
     | Id(l) -> (Movq, [lookup ctxt.layout l;dest])
 
-()
+(* saves content of src to specifed uid *)
 let compile_result (ctxt:ctxt) (src:X86.operand) : uid -> ins =
   function uid -> 
   (Movq, [src; lookup ctxt.layout uid])
@@ -217,11 +217,17 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
   | Binop(operator, ty, op1, op2) -> 
   let x86_ins_src = compile_operand ctxt (Reg(Rax)) op1 in
   let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op2 in
-  let x86_ins_store = 
+  let x86_ins_calc =
   begin match operator with
-    | Add -> 
-    | _ -> []
+    | Add -> (Addq, [(Reg(Rax)); (Reg(Rdx))])
+    | Sub -> (Subq, [(Reg(Rax)); (Reg(Rdx))])
+    | Mul -> (Imulq, [(Reg(Rax)); (Reg(Rdx))])
+    | Shl -> (Shlq, [(Reg(Rax)); (Reg(Rdx))])
+    | _ -> (Retq,[])
   end
+  in
+  let x86_ins_store = compile_result ctxt (Reg(Rdx)) uid in
+  [x86_ins_src;x86_ins_dest;x86_ins_calc;x86_ins_store]
   | _ -> []
 
 
