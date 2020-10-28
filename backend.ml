@@ -275,11 +275,20 @@ let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
    [blk]  - LLVM IR code for the block
 *)
 let compile_block (fn:string) (ctxt:ctxt) (blk:Ll.block) : ins list =
-  failwith "compile_block not implemented"
+  let rec compile_insns insns_list =
+    begin match insns_list with
+      | [] -> []
+      | h::tl -> (compile_insn ctxt h)@(compile_insns tl)
+    end
+  in
+  let compiled_insns = compile_insns blk.insns in
+  let (_,term) = blk.term in
+  let compiled_term = compile_terminator fn ctxt term in
+  compiled_insns@compiled_term
+
 
 let compile_lbl_block fn lbl ctxt blk : elem =
   Asm.text (mk_lbl fn lbl) (compile_block fn ctxt blk)
-
 
 
 (* compile_fdecl ------------------------------------------------------------ *)
