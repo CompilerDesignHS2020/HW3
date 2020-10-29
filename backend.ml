@@ -214,25 +214,44 @@ failwith "compile_gep not implemented"
 (* op1 is always loaded to rdx, op2 to rax *)
 let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
   match i with
-  | Binop(operator, ty, op1, op2) -> 
-  let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op1 in
-  let x86_ins_src = compile_operand ctxt (Reg(Rax)) op2 in
-  let x86_ins_calc =
-  begin match operator with
-    | Add -> (Addq, [(Reg(Rax)); (Reg(Rdx))])
-    | Sub -> (Subq, [(Reg(Rax)); (Reg(Rdx))])
-    | Mul -> (Imulq, [(Reg(Rax)); (Reg(Rdx))])
-    | Shl -> (Shlq, [(Reg(Rax)); (Reg(Rdx))])
-    | Lshr -> (Shrq, [(Reg(Rax)); (Reg(Rdx))])
-    | Ashr -> (Sarq, [(Reg(Rax)); (Reg(Rdx))])
-    | And -> (Andq, [(Reg(Rax)); (Reg(Rdx))])
-    | Or -> (Orq, [(Reg(Rax)); (Reg(Rdx))])
-    | Xor -> (Xorq, [(Reg(Rax)); (Reg(Rdx))])
-  end
-  in
-  let x86_ins_store = compile_result ctxt (Reg(Rdx)) uid in
-  [x86_ins_dest;x86_ins_src;x86_ins_calc;x86_ins_store]
-  | _ -> []
+    (*compile arithmetic, bitshift and logical insns *)
+    | Binop(operator, ty, op1, op2) -> 
+      let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op1 in
+      let x86_ins_src = compile_operand ctxt (Reg(Rax)) op2 in
+      let x86_ins_calc =
+      begin match operator with
+        | Add -> (Addq, [(Reg(Rax)); (Reg(Rdx))])
+        | Sub -> (Subq, [(Reg(Rax)); (Reg(Rdx))])
+        | Mul -> (Imulq, [(Reg(Rax)); (Reg(Rdx))])
+        | Shl -> (Shlq, [(Reg(Rax)); (Reg(Rdx))])
+        | Lshr -> (Shrq, [(Reg(Rax)); (Reg(Rdx))])
+        | Ashr -> (Sarq, [(Reg(Rax)); (Reg(Rdx))])
+        | And -> (Andq, [(Reg(Rax)); (Reg(Rdx))])
+        | Or -> (Orq, [(Reg(Rax)); (Reg(Rdx))])
+        | Xor -> (Xorq, [(Reg(Rax)); (Reg(Rdx))])
+      end
+      in
+      let x86_ins_store = compile_result ctxt (Reg(Rdx)) uid in
+      [x86_ins_dest;x86_ins_src;x86_ins_calc;x86_ins_store]
+      
+      (*compile icmp insns *)
+    | Icmp(cnd, ty, op1, op2) -> 
+      let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op1 in
+      let x86_ins_src = compile_operand ctxt (Reg(Rax)) op2 in
+      let x86_insns_cmp =
+      [(Cmpq, [(Reg(Rax)); (Reg(Rdx))]);
+      (Set(compile_cnd cnd), [(Reg(Rdx))]) 
+      ]
+      in
+      let x86_ins_store = compile_result ctxt (Reg(Rdx)) uid in
+      [x86_ins_dest;x86_ins_src]@x86_insns_cmp@[x86_ins_store]
+
+      (*compile alloca insns *)
+    | Alloca(ty) ->  
+      let x86_ins_alloc = (Addq, [Imm(Lit(Int64.of_int (size_ty ctxt.tdecls ty)))); (Reg(Rsp))]) in
+      let x86_ins_store = compile_result ctxt (Reg(Rsp)) uid in
+      [x86_ins_alloc]@[x86_ins_store]
+    | _ -> []
 
 
 
@@ -265,7 +284,9 @@ let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
         end
       in
       rax_ins@
-      [(Addq, [Imm(Lit(Int64.mul (Int64.of_int (List.length ctxt.layout)) 8L));Reg(Rsp)]);
+      (*[(Addq, [Imm(Lit(Int64.mul (Int64.of_int (List.length ctxt.layout)) 8L));Reg(Rsp)]);
+      *)
+      [(Movq, [Reg(Rbp); Reg(Rsp)]);
       (Popq, [Reg(Rbp)]);
       (Retq, []);
       ]
