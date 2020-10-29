@@ -257,9 +257,21 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
 
       (*compile alloca insns *)
     | Alloca(ty) ->  
-      let x86_ins_alloc = (Addq, [Imm(Lit(Int64.of_int (size_ty ctxt.tdecls ty)))); (Reg(Rsp))]) in
+      let x86_ins_alloc = (Addq, [Imm(Lit(Int64.of_int (size_ty ctxt.tdecls ty))); (Reg(Rsp))]) in
       let x86_ins_store = compile_result ctxt (Reg(Rsp)) uid in
       [x86_ins_alloc]@[x86_ins_store]
+
+    | Load(ty, op) -> 
+      let x86_ins_src = compile_operand ctxt (Reg(Rax)) op in
+      let x86_ins_load = compile_result ctxt (Ind2(Rax)) uid in
+      [x86_ins_src;x86_ins_load]
+
+    | Store(ty, op1, op2) ->
+      let x86_ins_ptr = compile_operand ctxt (Reg(Rdx)) op2 in
+      let x86_ins_src = compile_operand ctxt (Reg(Rax)) op1 in
+      let x86_ins_store = (Movq, [Reg(Rax); Ind2(Rdx)]) in
+      [x86_ins_ptr;x86_ins_src;x86_ins_store]
+
     | _ -> []
 
 
