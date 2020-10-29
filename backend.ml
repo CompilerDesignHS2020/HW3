@@ -347,12 +347,12 @@ let compile_terminator (fn:string) (ctxt:ctxt) (t:Ll.terminator) : ins list =
       (Popq, [Reg(Rbp)]);
       (Retq, []);
       ]
-    | Br(lbl) -> [(Jmp, [Imm(Lbl(lbl))])]
+    | Br(lbl) -> [(Jmp, [Imm(Lbl(mk_lbl fn lbl))])]
     | Cbr(operand, lbl1, lbl2) -> 
       [compile_operand ctxt (Reg(Rax)) operand;
-      (Cmpq, [Reg(Rax); (Imm(Lit(0L)))]);
-      (J(Neq), [Imm(Lbl(lbl1))]);
-      (Jmp, [Imm(Lbl(lbl2))])]
+      (Cmpq, [(Imm(Lit(0L))); Reg(Rax)]);
+      (J(Neq), [Imm(Lbl(mk_lbl fn lbl1))]);
+      (Jmp, [Imm(Lbl(mk_lbl fn lbl2))])]
   end
 
 
