@@ -152,8 +152,17 @@ let compile_result (ctxt:ctxt) (src:X86.operand) : uid -> ins =
      Your function should simply return 0 in those cases
 *)
 let rec size_ty (tdecls:(tid * ty) list) (t:Ll.ty) : int =
-failwith "size_ty not implemented"
-
+match t with
+  | Void -> 0
+  | I1 -> 8
+  | I8 -> 0
+  | I64 -> 8
+  | Ptr(ty) -> 8
+  | Struct(h::tl) -> (size_ty tdecls h) + (size_ty tdecls (Struct(tl)))
+  | Array(size, ty) -> size * (size_ty tdecls ty)
+  | Fun(args, ret) -> 0
+  | Namedt(tid) -> size_ty tdecls (lookup tdecls tid)
+  | _ -> 0
 
 
 
