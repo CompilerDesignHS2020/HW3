@@ -272,32 +272,41 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
       let x86_ins_store = (Movq, [Reg(Rax); Ind2(Rdx)]) in
       [x86_ins_ptr;x86_ins_src;x86_ins_store]
 
-    | _ -> []
     | Call(ty, op, args) ->
-      let rec fill_args act_args:X86.ins list =
+
+      (* fill all arguments to reg / stack according System V ABI calling conventon *)
+      let rec fill_args act_args =
       begin match act_args with
         | [] -> []
         | (ll_ty, ll_op)::tl ->  let ind = (List.length args - List.length act_args) in
           begin match (ind) with
-          | 0 -> [(Movq, [(compile_operand ll_op); (Reg(Rdi))])]@(fill_args tl)
-          | 1 -> [(Movq, [(compile_operand ll_op); (Reg(Rsi))])]@(fill_args tl)
-          | 2 -> [(Movq, [(compile_operand ll_op); (Reg(Rdx))])]@(fill_args tl)
-          | 3 -> [(Movq, [(compile_operand ll_op); (Reg(Rcx))])]@(fill_args tl)
-          | 4 -> [(Movq, [(compile_operand ll_op); (Reg(R08))])]@(fill_args tl)
-          | 5 -> [(Movq, [(compile_operand ll_op); (Reg(R09))])]@(fill_args tl)
+          | 0 -> [compile_operand ctxt (Reg(Rdi)) ll_op]@(fill_args tl)
+          | 1 -> [compile_operand ctxt (Reg(Rsi)) ll_op]@(fill_args tl)
+          | 2 -> [compile_operand ctxt (Reg(Rdx)) ll_op]@(fill_args tl)
+          | 3 -> [compile_operand ctxt (Reg(Rcx)) ll_op]@(fill_args tl)
+          | 4 -> [compile_operand ctxt (Reg(R08)) ll_op]@(fill_args tl)
+          | 5 -> [compile_operand ctxt (Reg(R09)) ll_op]@(fill_args tl)
           (*the sixth element is the first which is directly on the stack
           start filling in stack from adress of rsp - 2*int64
           *)
           | _ -> 
           let dest = Ind3(Lit(Int64.of_int ((-(ind-6)-3)*8)), Rsp) in
-          [(Movq, [(compile_operand ll_op); dest])]@(fill_args tl)
+          [compile_operand ctxt dest ll_op]@(fill_args tl)
         end
       end
       in 
-      fill_args args
+      let x86_ins_fill = fill_args args in
 
+      (* compile ins for calling address in op*)
+      let x86_ins_call = 
+      [compile_operand ctxt (Reg(R10)) op]@
+      [(Callq, [Reg(R10)])] in
 
-
+      (* comile ins for store rax in uid*)
+      let x86_ins_store_ret = [compile_result ctxt (Reg(Rax)) uid] in
+      
+      (*return all insns as ins list *)
+      x86_ins_fill@x86_ins_call@x86_ins_store_ret
 
     | _ -> []
 
