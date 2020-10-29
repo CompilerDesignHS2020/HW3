@@ -273,6 +273,33 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
       [x86_ins_ptr;x86_ins_src;x86_ins_store]
 
     | _ -> []
+    | Call(ty, op, args) ->
+      let rec fill_args act_args:X86.ins list =
+      begin match act_args with
+        | [] -> []
+        | (ll_ty, ll_op)::tl ->  let ind = (List.length args - List.length act_args) in
+          begin match (ind) with
+          | 0 -> [(Movq, [(compile_operand ll_op); (Reg(Rdi))])]@(fill_args tl)
+          | 1 -> [(Movq, [(compile_operand ll_op); (Reg(Rsi))])]@(fill_args tl)
+          | 2 -> [(Movq, [(compile_operand ll_op); (Reg(Rdx))])]@(fill_args tl)
+          | 3 -> [(Movq, [(compile_operand ll_op); (Reg(Rcx))])]@(fill_args tl)
+          | 4 -> [(Movq, [(compile_operand ll_op); (Reg(R08))])]@(fill_args tl)
+          | 5 -> [(Movq, [(compile_operand ll_op); (Reg(R09))])]@(fill_args tl)
+          (*the sixth element is the first which is directly on the stack
+          start filling in stack from adress of rsp - 2*int64
+          *)
+          | _ -> 
+          let dest = Ind3(Lit(Int64.of_int ((-(ind-6)-3)*8)), Rsp) in
+          [(Movq, [(compile_operand ll_op); dest])]@(fill_args tl)
+        end
+      end
+      in 
+      fill_args args
+
+
+
+
+    | _ -> []
 
 
 
