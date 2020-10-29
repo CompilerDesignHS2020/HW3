@@ -261,10 +261,12 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
       let x86_ins_store = compile_result ctxt (Reg(Rsp)) uid in
       [x86_ins_alloc]@[x86_ins_store]
 
+    (* load pointer in Rax, dereference Rax into Rdx, store Rdx at uid *)
     | Load(ty, op) -> 
-      let x86_ins_src = compile_operand ctxt (Reg(Rax)) op in
-      let x86_ins_load = compile_result ctxt (Ind2(Rax)) uid in
-      [x86_ins_src;x86_ins_load]
+      let x86_ins_src_ptr = compile_operand ctxt (Reg(Rax)) op in
+      let x86_ins_src = (Movq, [Ind2(Rax);Reg(Rdx)]) in
+      let x86_ins_load = compile_result ctxt (Reg(Rdx)) uid in
+      [x86_ins_src_ptr;x86_ins_src;x86_ins_load]
 
     | Store(ty, op1, op2) ->
       let x86_ins_ptr = compile_operand ctxt (Reg(Rdx)) op2 in
@@ -291,7 +293,7 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
           *)
           | _ -> 
           let dest = Ind3(Lit(Int64.of_int ((-(ind-6)-3)*8)), Rsp) in
-          [compile_operand ctxt dest ll_op]@(fill_args tl)
+          [compile_operand ctxt (Reg(Rax)) ll_op; (Movq, [Reg(Rax); dest])]@(fill_args tl)
         end
       end
       in 
@@ -483,7 +485,7 @@ let layout = stack_layout f_param f_cfg in
 let rec map_params (param_list : Ll.uid list)ind =
   begin match param_list with
     | [] -> []
-    | h::tl -> (map_params tl (ind + 1)) @ [(Movq, [(arg_loc ind);(lookup layout h)])]
+    | h::tl -> (map_params tl (ind + 1)) @ [(Movq, [(arg_loc ind);Reg(Rax)]);(Movq, [Reg(Rax);(lookup layout h)])]
   end
 in
 
