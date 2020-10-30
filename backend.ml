@@ -208,24 +208,37 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
         | act_path_ind::path_tl -> 
 
         (* Current type has subtype *)
+        print_endline @@ "list not empty "^(string_of_int (op_to_const act_path_ind));
         begin match act_ty with
           
           | Array(size, new_ty) -> 
+          print_endline @@ "array found: "^(string_of_int size);
+
           (calc_offset new_ty path_tl)@
           [compile_operand ctxt (Reg(Rdx)) act_path_ind]@
           [(Imulq, [Imm(Lit(Int64.of_int (size_ty ctxt.tdecls new_ty))); (Reg(Rdx))])]@
           [(Addq, [(Reg(Rdx));(Reg(Rax))])]
           | Struct(ty_list) -> 
+          print_endline @@ "stuct found";
           (* total size = size of previous struct elems t + size of act elem*)
           (calc_offset (struct_elem_ty ty_list (op_to_const act_path_ind) ) path_tl)@
           [(Movq, [Imm(Lit(Int64.of_int (struct_offset ty_list (op_to_const act_path_ind)))); (Reg(Rdx))])]@
           [(Addq, [(Reg(Rdx));(Reg(Rax))])]
           
           
-          | Namedt(tid) -> calc_offset (lookup ctxt.tdecls tid) ind_list
-          | _ -> [] (* should not happen *)
+          | Namedt(tid) -> 
+          print_endline @@ "Namedt found: "^tid;
+          calc_offset (lookup ctxt.tdecls tid) ind_list
+
+        | Void | I1 | I8 | I64 -> print_endline @@ "zero type found"; [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | Ptr(ty) -> print_endline @@ "ptr type found"; [(Movq, [Imm(Lit(0L)); (Reg(Rax))])] 
+        | Fun(arg_ty_list, ret_ty) -> print_endline @@ "fun type found"; [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        
+
+          | _ -> print_endline @@ "default statement"; [] (* should not happen *)
       end
       | [] -> 
+      print_endline @@ "list empty";
       begin match act_ty with
         (* Current type has no subtype *)
 
@@ -239,8 +252,13 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
     end
   in 
 
-  let (ty, base_addr_operand) = op in
-  let offset_ins = calc_offset (Array(Int32.to_int Int32.max_int,ty)) path in
+  let (start_ty, base_addr_operand) = op in
+  let internal_type =
+  match start_ty with
+    | Ptr(int_typ) -> int_typ
+    | _ -> Void
+  in
+  let offset_ins = calc_offset (Array(10,internal_type)) path in
   offset_ins@[compile_operand ctxt (Reg(Rdx)) base_addr_operand]@[(Addq, [Reg(Rdx);Reg(Rax)])]
 
 (* compiling call  ---------------------------------------------------------- *)
