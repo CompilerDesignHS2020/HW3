@@ -267,7 +267,7 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
       let x86_ins_store = compile_result ctxt (Reg(Rsp)) uid in
       [x86_ins_alloc]@[x86_ins_store]
 
-    (*x86 is untyped, so don't care types *)
+    (*x86 is untyped, so don't care types, just move ll_op to corresponding x86 reg / stack *)
     | Bitcast(ty1, op, ty2) -> 
     [compile_operand ctxt (Reg(Rax)) op]@[compile_result ctxt (Reg(Rax)) uid]
 
