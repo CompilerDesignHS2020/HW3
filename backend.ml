@@ -168,24 +168,52 @@ match t with
       in (4), but relative to the type f the sub-element picked out
       by the path so far
 *)
+
+
+
+
 let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: int list) : ins list =
 
-let rec calc_offset act_ty ind_list =   
-    begin match ind_list with
-      | act_ind::tl -> begin match act_ty with
-        | I1 -> (size_ty ctxt.tdecls I1) * act_ind
-        | I8 -> (size_ty ctxt.tdecls I8) * act_ind
-        | I64 -> (size_ty ctxt.tdecls I64) * act_ind
-        | Ptr(ty) -> (size_ty ctxt.tdecls (Ptr(ty))) * act_ind
-        | Array(size, new_ty) -> (size_ty ctxt.tdecls (Array(size, new_ty))) * act_ind + (calc_offset new_ty tl) 
-        
-        | _ -> 0
+  let rec struct_offset act_ty_list struct_ind =
+    begin match act_ty_list with
+      | struct_h::struct_tl -> 
+        if struct_ind = 0 then (0)
+        (* calc size of current elem in struct + size remaining elems *) 
+        else size_ty ctxt.tdecls struct_h + struct_offset struct_tl (struct_ind - 1)
+      | [] -> 0
     end
-    | [] -> 0
-  end
-in 
-let (ty, base_addr) = op in
-let offset = calc_offset ty path in
+  in
+
+  let rec struct_elem_ty act_ty_list struct_ind =
+    begin match act_ty_list with
+      | struct_h::struct_tl -> 
+        if struct_ind = 0 then struct_h
+        (* calc size of current elem in struct + size remaining elems *) 
+        else struct_elem_ty struct_tl (struct_ind - 1)
+      | [] -> Void
+    end
+  in
+
+  let rec calc_offset act_ty ind_list =   
+      begin match ind_list with
+        | act_path_ind::path_tl -> begin match act_ty with
+          | Void -> 0
+          | I1 -> 0
+          | I8 -> 0
+          | I64 -> 0
+          | Ptr(ty) -> (size_ty ctxt.tdecls (Ptr(ty))) * act_path_ind
+          | Array(size, new_ty) -> (size_ty ctxt.tdecls new_ty) * act_path_ind + (calc_offset new_ty path_tl) 
+          | Struct(ty_list) -> 
+            (struct_offset ty_list act_path_ind) + calc_offset (struct_elem_ty ty_list act_path_ind ) path_tl
+          (* total size = size of previous struct elems t + size of act elem*)
+
+          | _ -> 0
+      end
+      | [] -> 0
+    end
+  in 
+  let (ty, base_addr) = op in
+  let offset = calc_offset ty path in
 
 
 (* compiling call  ---------------------------------------------------------- *)
