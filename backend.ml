@@ -204,10 +204,10 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: int list) : ins lis
           | Ptr(ty) -> (size_ty ctxt.tdecls (Ptr(ty))) * act_path_ind
           | Array(size, new_ty) -> (size_ty ctxt.tdecls new_ty) * act_path_ind + (calc_offset new_ty path_tl) 
           | Struct(ty_list) -> 
-            (struct_offset ty_list act_path_ind) + calc_offset (struct_elem_ty ty_list act_path_ind ) path_tl
           (* total size = size of previous struct elems t + size of act elem*)
-
-          | _ -> 0
+            (struct_offset ty_list act_path_ind) + calc_offset (struct_elem_ty ty_list act_path_ind ) path_tl
+          | Fun(arg_ty_list, ret_ty) -> 0
+          | Namedt(tid) -> calc_offset (lookup ctxt.tdecls tid) ind_list
       end
       | [] -> 0
     end
