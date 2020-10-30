@@ -168,8 +168,25 @@ match t with
       in (4), but relative to the type f the sub-element picked out
       by the path so far
 *)
-let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
-failwith "compile_gep not implemented"
+let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: int list) : ins list =
+
+let rec calc_offset act_ty ind_list =   
+    begin match ind_list with
+      | act_ind::tl -> begin match act_ty with
+        | I1 -> (size_ty ctxt.tdecls I1) * act_ind
+        | I8 -> (size_ty ctxt.tdecls I8) * act_ind
+        | I64 -> (size_ty ctxt.tdecls I64) * act_ind
+        | Ptr(ty) -> (size_ty ctxt.tdecls (Ptr(ty))) * act_ind
+        | Array(size, new_ty) -> (size_ty ctxt.tdecls (Array(size, new_ty))) * act_ind + (calc_offset new_ty tl) 
+        
+        | _ -> 0
+    end
+    | [] -> 0
+  end
+in 
+let (ty, base_addr) = op in
+let offset = calc_offset ty path in
+
 
 (* compiling call  ---------------------------------------------------------- *)
 
