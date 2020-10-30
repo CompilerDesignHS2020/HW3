@@ -107,39 +107,6 @@ let compile_result (ctxt:ctxt) (src:X86.operand) : uid -> ins =
   (Movq, [src; lookup ctxt.layout uid])
 
 
-(* compiling call  ---------------------------------------------------------- *)
-
-(* You will probably find it helpful to implement a helper function that
-   generates code for the LLVM IR call instruction.
-
-   The code you generate should follow the x64 System V AMD64 ABI
-   calling conventions, which places the first six 64-bit (or smaller)
-   values in registers and pushes the rest onto the stack.  Note that,
-   since all LLVM IR operands are 64-bit values, the first six
-   operands will always be placed in registers.  (See the notes about
-   compiling fdecl below.)
-
-   [ NOTE: It is the caller's responsibility to clean up arguments
-   pushed onto the stack, so you must free the stack space after the
-   call returns. ]
-
-   [ NOTE: Don't forget to preserve caller-save registers (only if
-   needed). ]
-*)
-
-
-
-(* compiling getelementptr (gep)  ------------------------------------------- *)
-
-(* The getelementptr instruction computes an address by indexing into
-   a datastructure, following a path of offsets.  It computes the
-   address based on the size of the data, which is dictated by the
-   data's type.
-
-   To compile getelementptr, you must generate x86 code that performs
-   the appropriate arithmetic calculations.
-*)
-
 (* [size_ty] maps an LLVMlite type to a size in bytes.
     (needed for getelementptr)
 
@@ -164,6 +131,16 @@ match t with
   | Namedt(tid) -> size_ty tdecls (lookup tdecls tid)
   | _ -> 0
 
+(* compiling getelementptr (gep)  ------------------------------------------- *)
+
+(* The getelementptr instruction computes an address by indexing into
+   a datastructure, following a path of offsets.  It computes the
+   address based on the size of the data, which is dictated by the
+   data's type.
+
+   To compile getelementptr, you must generate x86 code that performs
+   the appropriate arithmetic calculations.
+*)
 
 
 (* Generates code that computes a pointer value.
@@ -194,6 +171,25 @@ match t with
 let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
 failwith "compile_gep not implemented"
 
+(* compiling call  ---------------------------------------------------------- *)
+
+(* You will probably find it helpful to implement a helper function that
+   generates code for the LLVM IR call instruction.
+
+   The code you generate should follow the x64 System V AMD64 ABI
+   calling conventions, which places the first six 64-bit (or smaller)
+   values in registers and pushes the rest onto the stack.  Note that,
+   since all LLVM IR operands are 64-bit values, the first six
+   operands will always be placed in registers.  (See the notes about
+   compiling fdecl below.)
+
+   [ NOTE: It is the caller's responsibility to clean up arguments
+   pushed onto the stack, so you must free the stack space after the
+   call returns. ]
+
+   [ NOTE: Don't forget to preserve caller-save registers (only if
+   needed). ]
+*)
 
 
 (* compiling instructions  -------------------------------------------------- *)
