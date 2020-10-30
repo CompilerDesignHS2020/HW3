@@ -388,9 +388,7 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
       (*return all insns as ins list *)
       x86_ins_fill@x86_ins_call@x86_ins_store_ret
 
-      | Gep(ty, op,) 
-
-    | _ -> []
+      | Gep(ty, op, path_list) -> (compile_gep ctxt (ty, op) path_list)@[compile_result ctxt (Reg(Rax)) uid]
 
 
 
