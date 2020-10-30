@@ -263,7 +263,7 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
 
       (*compile alloca insns *)
     | Alloca(ty) ->  
-      let x86_ins_alloc = (Addq, [Imm(Lit(Int64.of_int (size_ty ctxt.tdecls ty))); (Reg(Rsp))]) in
+      let x86_ins_alloc = (Subq, [Imm(Lit(Int64.of_int (size_ty ctxt.tdecls ty))); (Reg(Rsp))]) in
       let x86_ins_store = compile_result ctxt (Reg(Rsp)) uid in
       [x86_ins_alloc]@[x86_ins_store]
 
