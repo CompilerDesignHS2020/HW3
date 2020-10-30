@@ -174,6 +174,7 @@ match t with
 
 let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: int list) : ins list =
 
+  (* returns offset of struct item at index struc_ind *)
   let rec struct_offset act_ty_list struct_ind =
     begin match act_ty_list with
       | struct_h::struct_tl -> 
@@ -184,11 +185,11 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: int list) : ins lis
     end
   in
 
+  (* returns struct item at index struc_ind *)
   let rec struct_elem_ty act_ty_list struct_ind =
     begin match act_ty_list with
       | struct_h::struct_tl -> 
         if struct_ind = 0 then struct_h
-        (* calc size of current elem in struct + size remaining elems *) 
         else struct_elem_ty struct_tl (struct_ind - 1)
       | [] -> Void
     end
