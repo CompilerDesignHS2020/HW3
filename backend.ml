@@ -267,6 +267,10 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
       let x86_ins_store = compile_result ctxt (Reg(Rsp)) uid in
       [x86_ins_alloc]@[x86_ins_store]
 
+    (*x86 is untyped, so don't care types *)
+    | Bitcast(ty1, op, ty2) -> 
+    [compile_operand ctxt (Reg(Rax)) op]@[compile_result ctxt (Reg(Rax)) uid]
+
     (* load pointer in Rax, dereference Rax into Rdx, store Rdx at uid *)
     | Load(ty, op) -> 
       let x86_ins_src_ptr = compile_operand ctxt (Reg(Rax)) op in
