@@ -98,7 +98,7 @@ let compile_operand (ctxt:ctxt) (dest:X86.operand) : Ll.operand -> ins =
   match ll_op with
     | Null -> (Movq, [Imm(Lit(0L)); dest])
     | Const(c) -> (Movq, [Imm(Lit(c)); dest])
-    | Gid(g) -> (Leaq, [Imm(Lbl(g)); dest])
+    | Gid(g) -> (Leaq, [Ind1(Lbl(g)); dest])
     | Id(l) -> (Movq, [lookup ctxt.layout l;dest])
 
 (* saves content of src to specifed uid *)
@@ -226,15 +226,21 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
     (*compile arithmetic, bitshift and logical insns *)
     | Binop(operator, ty, op1, op2) -> 
       let x86_ins_dest = compile_operand ctxt (Reg(Rdx)) op1 in
-      let x86_ins_src = compile_operand ctxt (Reg(Rax)) op2 in
+      let x86_ins_src = 
+
+      (*bitshift insns must use Reg rcx for amount *)
+      begin match operator with
+        | Shl | Lshr | Ashr -> compile_operand ctxt (Reg(Rcx)) op2
+        | _ -> compile_operand ctxt (Reg(Rax)) op2
+      end in
       let x86_ins_calc =
       begin match operator with
         | Add -> (Addq, [(Reg(Rax)); (Reg(Rdx))])
         | Sub -> (Subq, [(Reg(Rax)); (Reg(Rdx))])
         | Mul -> (Imulq, [(Reg(Rax)); (Reg(Rdx))])
-        | Shl -> (Shlq, [(Reg(Rax)); (Reg(Rdx))])
-        | Lshr -> (Shrq, [(Reg(Rax)); (Reg(Rdx))])
-        | Ashr -> (Sarq, [(Reg(Rax)); (Reg(Rdx))])
+        | Shl -> (Shlq, [(Reg(Rcx)); (Reg(Rdx))])
+        | Lshr -> (Shrq, [(Reg(Rcx)); (Reg(Rdx))])
+        | Ashr -> (Sarq, [(Reg(Rcx)); (Reg(Rdx))])
         | And -> (Andq, [(Reg(Rax)); (Reg(Rdx))])
         | Or -> (Orq, [(Reg(Rax)); (Reg(Rdx))])
         | Xor -> (Xorq, [(Reg(Rax)); (Reg(Rdx))])
