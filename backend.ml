@@ -172,7 +172,15 @@ match t with
 
 
 
-let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: int list) : ins list =
+let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : ins list =
+
+  let op_to_const op =
+    match op with
+      | Null -> 0
+      | Const(c) -> Int64.to_int c
+      | Gid(d) -> 0 (* Should raise an error *)
+      | Id(uid) -> 0 (* Should raise an error *)
+  in
 
   (* returns offset of struct item at index struc_ind *)
   let rec struct_offset act_ty_list struct_ind =
@@ -197,24 +205,45 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: int list) : ins lis
 
   let rec calc_offset act_ty ind_list =   
       begin match ind_list with
-        | act_path_ind::path_tl -> begin match act_ty with
-          | Void -> 0
-          | I1 -> 0
-          | I8 -> 0
-          | I64 -> 0
-          | Ptr(ty) -> (size_ty ctxt.tdecls (Ptr(ty))) * act_path_ind
-          | Array(size, new_ty) -> (size_ty ctxt.tdecls new_ty) * act_path_ind + (calc_offset new_ty path_tl) 
+        | act_path_ind::path_tl -> 
+
+        (* Current type has subtype *)
+        begin match act_ty with
+          
+          | Array(size, new_ty) -> 
+          (calc_offset new_ty path_tl)@
+          [compile_operand ctxt (Reg(Rdx)) act_path_ind]@
+          [(Imulq, [Imm(Lit(Int64.of_int (size_ty ctxt.tdecls new_ty))); (Reg(Rdx))])]@
+          [(Addq, [(Reg(Rdx));(Reg(Rax))])]
           | Struct(ty_list) -> 
           (* total size = size of previous struct elems t + size of act elem*)
-            (struct_offset ty_list act_path_ind) + calc_offset (struct_elem_ty ty_list act_path_ind ) path_tl
-          | Fun(arg_ty_list, ret_ty) -> 0
+          (calc_offset (struct_elem_ty ty_list (op_to_const act_path_ind) ) path_tl)@
+          [(Movq, [Imm(Lit(Int64.of_int (struct_offset ty_list (op_to_const act_path_ind)))); (Reg(Rdx))])]@
+          [(Addq, [(Reg(Rdx));(Reg(Rax))])]
+          
+          
           | Namedt(tid) -> calc_offset (lookup ctxt.tdecls tid) ind_list
+          | _ -> [] (* should not happen *)
       end
-      | [] -> 0
+      | [] -> 
+      begin match act_ty with
+        (* Current type has no subtype *)
+
+        | Void -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | I1 -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | I8 -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | I64 -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | Ptr(ty) -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | Fun(arg_ty_list, ret_ty) -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | Namedt(tid) -> calc_offset (lookup ctxt.tdecls tid) ind_list
+
+        | _ -> [] (* should not happen *)
+      end
     end
   in 
-  let (ty, base_addr) = op in
-  let offset = calc_offset ty path in
+
+  let (ty, base_addr_operand) = op in
+  let offset = calc_offset Array(ty) path in
 
 
 (* compiling call  ---------------------------------------------------------- *)
