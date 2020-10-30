@@ -229,10 +229,7 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
       begin match act_ty with
         (* Current type has no subtype *)
 
-        | Void -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
-        | I1 -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
-        | I8 -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
-        | I64 -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
+        | Void | I1 | I8 | I64 -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
         | Ptr(ty) -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
         | Fun(arg_ty_list, ret_ty) -> [(Movq, [Imm(Lit(0L)); (Reg(Rax))])]
         | Namedt(tid) -> calc_offset (lookup ctxt.tdecls tid) ind_list
