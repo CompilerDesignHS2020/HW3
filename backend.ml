@@ -412,7 +412,7 @@ match n with
   (*the sixth element is the first which is directly on the stack
   start filling in stack from adress of old_rbp - 2*int64
   *)
-  | _ -> Ind3(Lit(Int64.of_int ((-(n-6)-2)*8)), Rbp)
+  | _ -> Ind3(Lit(Int64.of_int ((-(n-6)-1)*8)), Rbp)
   
 
 (* We suggest that you create a helper function that computes the
@@ -426,6 +426,7 @@ match n with
 
 (* creates mapping of all uids of a function: *)
 (* highest stack address on top (at ret_addr)
+
 ret_addr
 old_rbp     <- rbp
 arg_1
