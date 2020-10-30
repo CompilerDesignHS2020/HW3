@@ -243,8 +243,8 @@ let compile_gep (ctxt:ctxt) (op : Ll.ty * Ll.operand) (path: Ll.operand list) : 
   in 
 
   let (ty, base_addr_operand) = op in
-  let offset = calc_offset Array(ty) path in
-
+  let offset_ins = calc_offset (Array(Int32.to_int Int32.max_int,ty)) path in
+  offset_ins@[compile_operand ctxt (Reg(Rdx)) base_addr_operand]@[(Addq, [Reg(Rdx);Reg(Rax)])]
 
 (* compiling call  ---------------------------------------------------------- *)
 
@@ -390,6 +390,8 @@ let compile_insn (ctxt:ctxt) ((uid:uid), (i:Ll.insn)) : X86.ins list =
       
       (*return all insns as ins list *)
       x86_ins_fill@x86_ins_call@x86_ins_store_ret
+
+      | Gep(ty, op,) 
 
     | _ -> []
 
